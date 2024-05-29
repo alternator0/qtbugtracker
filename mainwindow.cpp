@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+//#include"pqxx/pqxx"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -15,6 +16,10 @@ MainWindow::MainWindow(QWidget *parent)
   }
 
   ui->tableView->setModel(m_model);
+
+  ui->splitter->setSizes({800,200});
+
+  //ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 MainWindow::~MainWindow() { delete ui; }
@@ -54,4 +59,13 @@ void MainWindow::on_tableView_clicked(const QModelIndex &index)
 
 
 }
+
+/*
+void MainWindow::on_pushButton_3_clicked()
+{
+  pqxx::work txn{c};
+  txn.exec("INSERT INTO Messages(username, message) VALUES ( hej, siemasz);");
+  txn.commit();
+}
+*/
 

@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QStandardItemModel>
-#include <memory>
+//#include "pqxx/pqxx"
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -24,8 +24,17 @@ private slots:
 
   void on_tableView_clicked(const QModelIndex &index);
 
+  //void on_pushButton_3_clicked();
+
 private:
   Ui::MainWindow *ui;
   QStandardItemModel *m_model = new QStandardItemModel(5, 3);
+  /*
+  pqxx::connection c{
+                     "host=localhost "
+                     "dbname=chat "
+                     "user=admin "
+                     "password=changeme"};
+*/
 };
 #endif // MAINWINDOW_H

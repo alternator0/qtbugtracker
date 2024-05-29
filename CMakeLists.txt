@@ -42,10 +42,7 @@ else()
     endif()
 endif()
 
-
-add_subdirectory(deps/libpqxx build-pqxx)
-
-target_link_libraries(bugtracker PRIVATE Qt${QT_VERSION_MAJOR}::Widgets PRIVATE pqxx)
+target_link_libraries(bugtracker PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -71,5 +68,3 @@ install(TARGETS bugtracker
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(bugtracker)
 endif()
-
-
