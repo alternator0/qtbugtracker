@@ -3,7 +3,11 @@
 
 #include <QMainWindow>
 #include <QStandardItemModel>
-//#include "pqxx/pqxx"
+#include "pqxx/pqxx"
+#include "add.h"
+#include <memory>
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -15,6 +19,8 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow(QWidget *parent = nullptr);
+  std::shared_ptr<pqxx::connection> getConnection(){return m_c;}
+  friend void updateModel(MainWindow* w);
   ~MainWindow();
 
 private slots:
@@ -29,6 +35,8 @@ private slots:
 private:
   Ui::MainWindow *ui;
   QStandardItemModel *m_model = new QStandardItemModel(5, 3);
+  std::shared_ptr<pqxx::connection> m_c;
+  Add *add;
   /*
   pqxx::connection c{
                      "host=localhost "
