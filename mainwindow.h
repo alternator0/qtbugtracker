@@ -22,7 +22,7 @@ public:
   std::shared_ptr<pqxx::connection> getConnection(){return m_c;}
   friend void updateModel(MainWindow* w);
   ~MainWindow();
-
+  const int getIndexOfSelectedBug();
 private slots:
   void on_pushButton_clicked();
 
@@ -31,6 +31,14 @@ private slots:
   void on_tableView_clicked(const QModelIndex &index);
 
   //void on_pushButton_3_clicked();
+
+  void on_actionUpdate_triggered();
+
+  void on_pushButton_3_clicked();
+
+
+
+  void on_actionExit_triggered();
 
 private:
   Ui::MainWindow *ui;

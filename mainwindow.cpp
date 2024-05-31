@@ -1,40 +1,29 @@
+#include <string>
 #include "./ui_mainwindow.h"
 #include "mainwindow.h"
 #include "pqxx/pqxx"
-
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       ui(new Ui::MainWindow),
       m_c(std::make_shared<pqxx::connection>("host=localhost "
-                                              "dbname=bugtracker "
-                                              "user=postgres "
-                                              "password=changeme")) ,
+                                             "dbname=bugtracker "
+                                             "user=postgres "
+                                             "password=changeme")),
       add(nullptr) {
-
   ui->setupUi(this);
-  /*
-  pqxx::work txn{*m_c};
-  txn.exec("INSERT INTO bugs(name, priority, comment) VALUES (" +
-           txn.quote("test") + ", " + txn.quote("1") + ", 'test');");
-  txn.commit();
-*/
-  // Wypełnij model danymi
-  /*
-  for (int row = 0; row < 5; ++row) {
-    for (int column = 0; column < 3; ++column) {
-      QModelIndex index = m_model->index(row, column, QModelIndex());
-      m_model->setData(index, QVariant((row + 1) * (column + 1)));
-    }
-  }
-*/
-  updateModel(this);
+
+  setWindowTitle("Bugtracker");
+
   ui->tableView->setModel(m_model);
-  ui->tableView->hideColumn(4);
+  updateModel(this);
 
   ui->splitter->setSizes({800, 200});
+}
 
-         // ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+const int MainWindow::getIndexOfSelectedBug() {
+  QModelIndex selectedIndex = ui->tableView->currentIndex();
+  return m_model->data(selectedIndex.sibling(selectedIndex.row(), 0)).toInt();
 }
 
 MainWindow::~MainWindow() {
@@ -42,46 +31,44 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::on_pushButton_clicked() {
-  if (!add){
+  if (!add) {
     add = new Add(this);
   }
   add->show();
-  /*
-  m_model->insertRow(m_model->rowCount());
-
-  for (int column{0}; column < m_model->columnCount(); ++column) {
-    QModelIndex index{m_model->index(m_model->rowCount() - 1, column)};
-    m_model->setData(index, QVariant((m_model->rowCount()) * (column + 1)));
-  }
-*/
 }
 
 void MainWindow::on_pushButton_2_clicked() {
   QModelIndex selectedIndex = ui->tableView->currentIndex();
   if (selectedIndex.isValid()) {
+    pqxx::work txn{*m_c};
+    txn.exec("DELETE FROM bugs WHERE id = " +
+             txn.quote(getIndexOfSelectedBug()) + ";");
     m_model->removeRow(selectedIndex.row());
-  } else
-    m_model->removeRows(m_model->rowCount() - 1, 1);
+    txn.commit();
+  }
 }
 
 void MainWindow::on_tableView_clicked(const QModelIndex& index) {
-  QString col1{m_model->data(m_model->index(index.row(), 1)).toString()};
-  ui->label->setText(col1);
+  QString name{m_model->data(m_model->index(index.row(), 1)).toString()};
+  ui->label->setText(name);
 
-  QString col2{m_model->data(m_model->index(index.row(), 2)).toString()};
-  ui->label_2->setText(col2);
+  QString time{m_model->data(m_model->index(index.row(), 3)).toString()};
+  ui->label_2->setText(time);
 
-  QString col3{m_model->data(m_model->index(index.row(), 3)).toString()};
-  ui->label_3->setText(col3);
+  int priority{m_model->data(m_model->index(index.row(), 2)).toInt()};
+  ui->spinBox->setValue(priority);
 
   QString comment{m_model->data(m_model->index(index.row(), 4)).toString()};
   ui->mCommentEdit->setText(comment);
 }
 
-void updateModel(MainWindow* w){
+void updateModel(MainWindow* w) {
   pqxx::work txn{*w->m_c};
-  pqxx::result result{txn.exec("SELECT id, name, priority, time, comment FROM bugs")};
+  pqxx::result result{
+                      txn.exec("SELECT id, name, priority, time, comment FROM bugs")};
   w->m_model->clear();
+
+         // filling model with data from database
   for (const auto& row : result) {
     QList<QStandardItem*> rowData;
     for (const auto& field : row) {
@@ -90,13 +77,33 @@ void updateModel(MainWindow* w){
     }
     w->m_model->appendRow(rowData);
   }
+  // hiding comment column
+  w->ui->tableView->hideColumn(4);
+
+  w->ui->tableView->setColumnWidth(0, 20);
+  w->ui->tableView->setColumnWidth(1, 570);
+  w->ui->tableView->setColumnWidth(2, 50);
+  w->m_model->setHeaderData(0, Qt::Horizontal, "ID");
+  w->m_model->setHeaderData(1, Qt::Horizontal, "Name");
+  w->m_model->setHeaderData(2, Qt::Horizontal, "Priority");
+  w->m_model->setHeaderData(3, Qt::Horizontal, "Time");
 }
 
-/*
-void MainWindow::on_pushButton_3_clicked()
-{
-  pqxx::work txn{c};
-  txn.exec("INSERT INTO Messages(username, message) VALUES ( hej, siemasz);");
-  txn.commit();
+void MainWindow::on_actionUpdate_triggered() {
+  updateModel(this);
 }
-*/
+
+void MainWindow::on_pushButton_3_clicked() {
+  pqxx::work txn{*m_c};
+  txn.exec(
+      "UPDATE bugs SET name =" + txn.quote(ui->label->text().toStdString()) +
+      ", priority = " + txn.quote(ui->spinBox->value()) + ", comment = " +
+      txn.quote(ui->mCommentEdit->toPlainText().toStdString()) +
+      " WHERE id = " + txn.quote(getIndexOfSelectedBug()) + ";");
+  txn.commit();
+  updateModel(this);
+}
+
+void MainWindow::on_actionExit_triggered() {
+  close();
+}
